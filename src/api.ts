@@ -2,9 +2,11 @@
 export type Job={upload_id?:number;filename?:string;display_name?:string;kiosk_name?:string;kiosk?:string;created_at?:string;status?:string;job_status?:string;payment_status?:string;pickup_code?:string}
 const base=String(import.meta.env.VITE_API_URL||'https://arox-api-993539509814.asia-south1.run.app').replace(/\/+$/,'')
 const key='arox-web-session'
+let memorySession:any=null
 export const api={
- session():any{try{return JSON.parse(sessionStorage.getItem(key)||'null')}catch{return null}},
- save(s:any){sessionStorage.setItem(key,JSON.stringify(s))},clear(){sessionStorage.removeItem(key)},
+ session():any{try{const saved=sessionStorage.getItem(key);if(saved)return JSON.parse(saved)}catch{}return memorySession},
+ save(s:any){memorySession=s;try{sessionStorage.setItem(key,JSON.stringify(s))}catch{}},
+ clear(){memorySession=null;try{sessionStorage.removeItem(key)}catch{}},
  whatsappPrint(phone='918015048274'){return this.call('/whatsapp/print/'+encodeURIComponent(phone))},
  async call<T=any>(path:string,options:RequestInit&{auth?:boolean}={}):Promise<T>{
  const headers=new Headers(options.headers);if(options.body&&!(options.body instanceof FormData))headers.set('Content-Type','application/json')

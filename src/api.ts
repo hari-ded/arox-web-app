@@ -12,8 +12,10 @@ export const api={
  const headers=new Headers(options.headers);if(options.body&&!(options.body instanceof FormData))headers.set('Content-Type','application/json')
  if(options.auth!==false&&this.session()?.token)headers.set('Authorization','Bearer '+this.session().token)
  let response:Response;try{response=await fetch(base+path,{...options,headers})}catch{throw Error('Cannot reach AROX API. Check the network and CORS_ALLOWED_ORIGINS for this site.')}
- const text=await response.text();if(!text.trim()){if(!response.ok)throw Error('AROX returned HTTP '+response.status);throw Error(`AROX API returned an empty response from ${new URL(response.url).pathname} (HTTP ${response.status})`)}let data:any;try{data=JSON.parse(text)}catch{data={message:text}}
- if(!response.ok)throw Error(data.error||data.message||('AROX returned HTTP '+response.status));return data
+ const path=new URL(response.url).pathname,text=await response.text();if(!text.trim()){if(!response.ok)throw Error('AROX returned HTTP '+response.status);throw Error(`AROX API returned an empty response from ${path} (HTTP ${response.status})`)}let data:any;try{data=JSON.parse(text)}catch{data={message:text}}
+ if(!response.ok)throw Error(data.error||data.message||('AROX returned HTTP '+response.status))
+ if(['/login','/firebase_login','/google_login'].includes(path)){if(data?.status==='two_factor_required'||data?.status==='two_factor_setup_required')return data;if(!data||typeof data!=='object'||Array.isArray(data))throw Error(`AROX ${path} returned a non-object login response (HTTP ${response.status})`);if(!(data.user_id&&(data.access_token||data.token)))throw Error(`AROX ${path} returned HTTP ${response.status} without account ID/token (fields: ${Object.keys(data).join(', ')||'none'}; status: ${data.status||'none'})`)}
+ return data
  }}
 export async function firebase(endpoint:string,body:any){
  const apiKey=import.meta.env.VITE_FIREBASE_API_KEY;if(!apiKey)throw Error('Set VITE_FIREBASE_API_KEY to enable Firebase sign-in.')
